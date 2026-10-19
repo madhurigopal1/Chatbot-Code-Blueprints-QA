@@ -1,12 +1,17 @@
 import os
-from typing import Annotated, TypedDict, Sequence
+from typing import Sequence, TypedDict
 
 from dotenv import load_dotenv
 from langchain_core.messages import BaseMessage, HumanMessage
-from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
-from langgraph.graph import StateGraph, START, END
+from langgraph.graph import START, END, StateGraph
 from langgraph.prebuilt import ToolNode
+
+from app.recommender_tools import (
+    compare_recommendation_strategies,
+    get_customer_metrics,
+    get_recommendations_for_customer,
+)
 
 load_dotenv()
 
@@ -63,7 +68,14 @@ def mlops_blueprint(workload: str) -> str:
     )
 
 
-TOOLS = [blueprint_for_use_case, governance_checklist, mlops_blueprint]
+TOOLS = [
+    blueprint_for_use_case,
+    governance_checklist,
+    mlops_blueprint,
+    get_recommendations_for_customer,
+    get_customer_metrics,
+    compare_recommendation_strategies,
+]
 
 
 class AgentState(TypedDict):
@@ -102,7 +114,6 @@ def run_agent(prompt: str):
 
 if __name__ == "__main__":
     demo_prompt = (
-        "Design a modern agentic AI blueprint for a retail customer support chatbot "
-        "with governance, observability, and MLOps."
+        "Recommend products for customer C003 and explain whether the user-based or SVD approach is more suitable."
     )
     print(run_agent(demo_prompt))

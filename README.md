@@ -2,22 +2,22 @@
 
 Conversational chatbot + governance framework for agentic AI, MLOps, cloud & generative AI code blueprints; includes docs, diagrams, personas, and example agent.
 
-This repository now includes a working LangChain + LangGraph example for building an agentic AI workflow with governance guardrails, tool use, and blueprint guidance.
+This repository includes a LangChain + LangGraph agentic AI starter and a recommendation agent that can explain and generate personalized retail recommendations.
 
 ## Repository layout
 
 - `app/` — LangGraph agent and tool implementations
-- `docs/` — architecture and governance blueprint docs
+- `docs/` — architecture and governance blueprints
 - `examples/` — runnable sample scripts
 - `requirements.txt` — Python dependencies
 - `.env.example` — environment variables
 
-## What is included
+## Included capabilities
 
-- A conversational AI agent built with LangChain and LangGraph
-- Tool-based orchestration for blueprint recommendations and governance checks
-- A blueprint assistant that can answer questions about chatbot architecture, MLOps, and agent governance
-- Simple production-ready patterns for extensibility
+- General AI blueprint assistant
+- Recommendation-agent workflow for retail personalization
+- Customer profiling and recommendation comparisons
+- Governance and MLOps guidance for enterprise AI systems
 
 ## Quick start
 
@@ -32,57 +32,43 @@ cd Chatbot-Code-Blueprints-QA
 
 ```bash
 python -m venv .venv
-source .venv/bin/activate  # Linux/macOS
-# or .venv\Scripts\activate  # Windows
+source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-3. Configure credentials:
+3. Configure your environment:
 
 ```bash
 cp .env.example .env
 ```
 
-Update `.env` with your OpenAI API key.
-
-4. Run the example:
+4. Run the recommendation agent demo:
 
 ```bash
-python examples/basic_agent.py
+python examples/recommendation_agent.py
 ```
 
-## Environment variables
+## Example prompts
 
-```bash
-OPENAI_API_KEY=your_key_here
-MODEL_NAME=gpt-4o-mini
-```
+- "Recommend products for customer C003"
+- "Compare user-based and SVD recommendations for C001"
+- "Tell me the profile and metrics for customer C005"
+- "Design an enterprise chatbot blueprint with governance and MLOps"
 
-## Example agent behavior
+## Recommended architecture
 
-The example agent can help with prompts like:
+The recommendation agent combines:
 
-- "Design a secure chatbot architecture for a retail assistant"
-- "Give me a blueprint for a multi-agent governance pattern"
-- "What should I include in a MLOps pipeline for GenAI apps?"
-- "Recommend an agent pattern for internal enterprise support"
-
-## Architecture pattern
-
-The sample uses a LangGraph state graph with:
-
-- agent node for LLM reasoning
-- tool node for structured function execution
-- governance checks for secure and explainable AI patterns
-- deterministic blueprint responses for common architecture questions
+- LangGraph workflow orchestration
+- tool-based execution
+- collaborative filtering engine
+- SVD-based alternatives
+- governance checks and explainability for business users
 
 ## Files
 
-- `app/agent.py` — main LangGraph workflow
-- `app/tools.py` — blueprint and governance tools
-- `docs/agent_blueprint.md` — architecture guidance
-- `examples/basic_agent.py` — sample driver
-
-## Contributing
-
-Contributions are welcome. Keep changes aligned with the governance and blueprint approach described in the repository docs.
+- `app/agent.py` — main orchestration workflow
+- `app/recommendation_engine.py` — recommendation logic
+- `app/recommender_tools.py` — tool wrappers
+- `examples/recommendation_agent.py` — sample chatbot usage
+- `docs/recommendation_agent_blueprint.md` — design guidance
