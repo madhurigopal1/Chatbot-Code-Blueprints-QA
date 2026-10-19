@@ -1,23 +1,32 @@
 # Chatbot Code Blueprints + QA
 
-Conversational chatbot + governance framework for agentic AI, MLOps, cloud & generative AI code blueprints; includes docs, diagrams, personas, and example agent.
+This repository contains a working prototype for a conversational chatbot and governance framework for agentic AI, MLOps, cloud, and generative AI blueprints.
 
-## Getting started
+## Status
 
-This repository collects design patterns, documentation, and example code for building conversational agents and governance around agentic systems. Use the sections below to find what you need:
+This branch includes a functional FastAPI prototype with:
+- a browser-based chat UI
+- a mock AI mode for local development and tests
+- a live AI mode compatible with OpenAI-style APIs
+- health monitoring endpoints
+- CI automation and Docker support
 
-- docs/ — architecture diagrams, governance framework, and blueprints.
-- examples/ — runnable example agents and integration snippets.
-- personas/ — example user and agent personas used in testing and demonstrations.
+## Quick start
 
-Quick start:
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
 
-1. Clone the repo:
+Then open http://localhost:8000
 
-   git clone https://github.com/madhurigopal1/Chatbot-Code-Blueprints-QA.git
+## API
 
-2. Review the docs/ directory to understand the blueprint structure and recommended practices.
+- GET /health
+- POST /api/chat
 
-3. Try the example agent in examples/ (follow any README or setup instructions inside that folder).
+## License
 
-Contributions welcome — please follow the contribution and governance guidance in the docs when proposing changes.
+MIT
