@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Retail Recommendation Agent</title>
+    <style>
+      body { font-family: Arial, sans-serif; max-width: 900px; margin: 40px auto; padding: 0 20px; }
+      .card { border: 1px solid #dfe3e8; border-radius: 12px; padding: 20px; }
+      textarea, input, button { width: 100%; box-sizing: border-box; padding: 12px; margin-top: 12px; }
+      button { background: #2563eb; color: white; border: none; border-radius: 8px; cursor: pointer; }
+      #result { margin-top: 20px; white-space: pre-wrap; background: #f8fafc; border: 1px solid #e2e8f0; padding: 16px; border-radius: 10px; }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h2>Retail Recommendation Agent</h2>
+      <label for="customerId">Customer ID</label>
+      <input id="customerId" value="C003" />
+      <label for="topN">Top N</label>
+      <input id="topN" type="number" value="5" min="1" max="20" />
+      <button id="submitBtn">Get recommendation</button>
+      <div id="result">Response will appear here.</div>
+    </div>
+
+    <script>
+      document.getElementById('submitBtn').addEventListener('click', async () => {
+        const customerId = document.getElementById('customerId').value;
+        const topN = document.getElementById('topN').value;
+        const response = await fetch('/api/recommend', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ customer_id: customerId, top_n: parseInt(topN, 10), include_explanation: true })
+        });
+        const data = await response.json();
+        document.getElementById('result').textContent = data.response || JSON.stringify(data, null, 2);
+      });
+    </script>
+  </body>
+</html>

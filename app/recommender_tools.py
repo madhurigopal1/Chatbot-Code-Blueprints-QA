@@ -1,67 +1,133 @@
-from langchain_core.tools import tool
+import os
+from typing import Sequence, TypedDict
 
-from app.recommendation_engine import RecommendationEngine
+from dotenv import load_dotenv
+from langchain_core.messages import BaseMessage, HumanMessage
+from langchain_openai import AzureChatOpenAI, ChatOpenAI
+from langgraph.graph import END, START, StateGraph
+from langgraph.prebuilt import ToolNode
 
-ENGINE = RecommendationEngine()
+from app.config import (
+    AZURE_OPENAI_API_KEY,
+    AZURE_OPENAI_API_VERSION,
+    AZURE_OPENAI_DEPLOYMENT_NAME,
+    AZURE_OPENAI_ENDPOINT,
+    MODEL_NAME,
+    USE_AZURE_OPENAI,
+)
+from app.recommender_tools import (
+    compare_recommendation_strategies,
+    get_customer_metrics,
+    get_recommendations_for_customer,
+)
 
-
-@tool
-def get_recommendations_for_customer(user_id: str, top_n: int = 5) -> str:
-    """Return product recommendations for a customer using collaborative filtering and SVD."""
-    try:
-        user_based = ENGINE.get_user_similarity_recommendations(user_id, top_n=top_n)
-        svd_based = ENGINE.get_svd_recommendations(user_id, top_n=top_n)
-        ensemble = ENGINE.get_ensemble_recommendations(user_id, top_n=top_n)
-
-        lines = [f"Recommendations for {user_id}:"]
-        lines.append("User-based: " + (
-            ", ".join(f"{item} ({score:.3f})" for item, score in user_based.items())
-            if len(user_based) else "no recommendations"
-        ))
-        lines.append("SVD-based: " + (
-            ", ".join(f"{item} ({score:.3f})" for item, score in svd_based.items())
-            if len(svd_based) else "no recommendations"
-        ))
-        lines.append("Ensemble: " + (
-            ", ".join(f"{item} ({score:.3f})" for item, score in ensemble.items())
-            if len(ensemble) else "no recommendations"
-        ))
-        return "\n".join(lines)
-    except ValueError as exc:
-        return str(exc)
+load_dotenv()
 
 
-@tool
-def get_customer_metrics(user_id: str) -> str:
-    """Return customer-level recommendation metrics and rating behavior."""
-    try:
-        stats = ENGINE.get_user_stats(user_id)
-        return (
-            f"Customer {user_id}: rated {stats['items_rated']} products, "
-            f"average rating {stats['avg_rating']:.2f}, "
-            f"min {stats['min_rating']:.2f}, max {stats['max_rating']:.2f}, "
-            f"unrated items {stats['items_not_rated']}."
+def get_llm():
+    if USE_AZURE_OPENAI and AZURE_OPENAI_API_KEY and AZURE_OPENAI_ENDPOINT:
+        return AzureChatOpenAI(
+            azure_endpoint=AZURE_OPENAI_ENDPOINT,
+            api_key=AZURE_OPENAI_API_KEY,
+            api_version=AZURE_OPENAI_API_VERSION,
+            azure_deployment=AZURE_OPENAI_DEPLOYMENT_NAME,
+            model=AZURE_OPENAI_DEPLOYMENT_NAME,
+            temperature=0,
         )
-    except ValueError as exc:
-        return str(exc)
+    if not os.getenv("OPENAI_API_KEY"):
+        raise ValueError("Set OPENAI_API_KEY or configure Azure OpenAI settings before running the agent.")
+    return ChatOpenAI(model=MODEL_NAME, temperature=0)
 
 
-@tool
-def compare_recommendation_strategies(user_id: str, top_n: int = 5) -> str:
-    """Compare user-based and SVD strategies and explain the trade-off."""
-    try:
-        user_based = ENGINE.get_user_similarity_recommendations(user_id, top_n=top_n)
-        svd_based = ENGINE.get_svd_recommendations(user_id, top_n=top_n)
-        ensemble = ENGINE.get_ensemble_recommendations(user_id, top_n=top_n)
+class AgentState(TypedDict):
+    messages: Sequence[BaseMessage]
 
+
+def blueprint_for_use_case(use_case: str) -> str:
+    use_case = use_case.lower()
+    if "retail" in use_case:
         return (
-            f"For {user_id}, user-based recommendations are: {list(user_based.index)}. "
-            f"SVD recommendations are: {list(svd_based.index)}. "
-            f"The ensemble combines both signals: {list(ensemble.index)}. "
-            "User-based filtering is strong when similar customers exist; SVD is stronger for latent patterns and sparse data."
+            "Retail agent blueprint: 1) ingestion of product catalog and customer events, "
+            "2) retrieval from approved product knowledge, 3) orchestration via a tool-calling agent, "
+            "4) guardrails for pricing and policy checks, 5) human escalation for exceptions."
         )
-    except ValueError as exc:
-        return str(exc)
+    if "support" in use_case:
+        return (
+            "Support agent blueprint: 1) ticket intake and triage, 2) retrieval from knowledge base, "
+            "3) policy-aware answer generation, 4) workflow actions for case updates, 5) audit logs."
+        )
+    if "finance" in use_case:
+        return (
+            "Finance agent blueprint: 1) secure data access controls, 2) retrieval of approved docs, "
+            "3) deterministic calculations, 4) approval checks for actions, 5) explainability logs."
+        )
+    return (
+        "Generic agent blueprint: 1) define goals and constraints, 2) connect to trusted tools and data, "
+        "3) add governance and human review, 4) use evaluation and observability for iteration."
+    )
 
 
-TOOLS = [get_recommendations_for_customer, get_customer_metrics, compare_recommendation_strategies]
+def governance_checklist(domain: str) -> str:
+    return (
+        f"Governance checklist for {domain or 'general AI'}: "
+        "- data access controls and secrets management, "
+        "- prompt and tool safety validation, "
+        "- audit logs and observability, "
+        "- human approval for high-risk actions, "
+        "- periodic evaluation and drift monitoring."
+    )
+
+
+def mlops_blueprint(workload: str) -> str:
+    return (
+        f"MLOps blueprint for {workload}: "
+        "- version models and prompts, "
+        "- run evaluation pipelines, "
+        "- store embeddings and retrieval metadata, "
+        "- validate production changes via regression tests, "
+        "- monitor quality, latency, and cost."
+    )
+
+
+TOOLS = [
+    blueprint_for_use_case,
+    governance_checklist,
+    mlops_blueprint,
+    get_recommendations_for_customer,
+    get_customer_metrics,
+    compare_recommendation_strategies,
+]
+
+
+def build_agent():
+    model = get_llm()
+    model_with_tools = model.bind_tools(TOOLS)
+
+    def call_model(state: AgentState):
+        response = model_with_tools.invoke(state["messages"])
+        return {"messages": [response]}
+
+    workflow = StateGraph(AgentState)
+    workflow.add_node("agent", call_model)
+    workflow.add_node("tools", ToolNode(TOOLS))
+    workflow.add_edge(START, "agent")
+    workflow.add_conditional_edges(
+        "agent",
+        lambda state: "tools" if getattr(state["messages"][-1], "tool_calls", None) else END,
+        {"tools": "tools", END: END},
+    )
+    workflow.add_edge("tools", "agent")
+    return workflow.compile()
+
+
+def run_agent(prompt: str):
+    app = build_agent()
+    result = app.invoke({"messages": [HumanMessage(content=prompt)]})
+    return result["messages"][-1].content
+
+
+if __name__ == "__main__":
+    demo_prompt = (
+        "Recommend products for customer C003 and explain whether the user-based or SVD approach is more suitable."
+    )
+    print(run_agent(demo_prompt))
